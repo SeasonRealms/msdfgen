@@ -69,6 +69,8 @@ typedef struct smg_glyph_result {
 } smg_glyph_result;
 
 MSDFGEN_EXT_PUBLIC int smg_get_abi_version(void);
+MSDFGEN_EXT_PUBLIC uint32_t smg_sizeof_glyph_request(void);
+MSDFGEN_EXT_PUBLIC uint32_t smg_sizeof_glyph_result(void);
 MSDFGEN_EXT_PUBLIC const char *smg_get_last_error(void);
 MSDFGEN_EXT_PUBLIC void smg_init_glyph_request(smg_glyph_request *request);
 MSDFGEN_EXT_PUBLIC void smg_init_glyph_result(smg_glyph_result *result);
