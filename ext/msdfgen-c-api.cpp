@@ -80,29 +80,28 @@ int smg_get_abi_version(void) {
     return SMG_ABI_VERSION;
 }
 
+uint32_t smg_sizeof_glyph_request(void) {
+    return (uint32_t) sizeof(smg_glyph_request);
+}
+
+uint32_t smg_sizeof_glyph_result(void) {
+    return (uint32_t) sizeof(smg_glyph_result);
+}
+
 const char *smg_get_last_error(void) {
     return g_lastError.empty() ? "" : g_lastError.c_str();
 }
 
 void smg_init_glyph_request(smg_glyph_request *request) {
-    if (!request)
+    if (!request || (request->struct_size != 0 && request->struct_size < sizeof(*request)))
         return;
-    std::memset(request, 0, sizeof(*request));
     request->struct_size = sizeof(*request);
-    request->coordinate_scaling = FONT_SCALING_EM_NORMALIZED;
-    request->glyph_scale = 64.0;
-    request->pixel_range = 8.0;
-    request->angle_threshold = 3.0;
-    request->coloring_strategy = SMG_COLORING_INK_TRAP;
-    request->overlap_support = 1;
-    request->error_correction_mode = ErrorCorrectionConfig::EDGE_PRIORITY;
-    request->error_correction_distance_check_mode = ErrorCorrectionConfig::CHECK_DISTANCE_AT_EDGE;
-    request->min_deviation_ratio = ErrorCorrectionConfig::defaultMinDeviationRatio;
-    request->min_improve_ratio = ErrorCorrectionConfig::defaultMinImproveRatio;
 }
 
 void smg_init_glyph_result(smg_glyph_result *result) {
-    smgResetResult(result);
+    if (!result || (result->struct_size != 0 && result->struct_size < sizeof(*result)))
+        return;
+    result->struct_size = sizeof(*result);
 }
 
 int smg_generate_glyph_mtsdf(const smg_glyph_request *request, smg_glyph_result *result) {
@@ -191,21 +190,22 @@ int smg_generate_glyph_mtsdf(const smg_glyph_request *request, smg_glyph_result 
             if (width <= 0 || height <= 0)
                 break;
 
-            const size_t pixelCount = static_cast<size_t>(width)*static_cast<size_t>(height)*4u;
-            pixels = static_cast<float *>(std::malloc(pixelCount*sizeof(float)));
-            if (!pixels) {
-                status = smgFail(SMG_STATUS_ALLOCATION_FAILED, "Failed to allocate output pixel buffer.");
-                break;
-            }
-
+            Bitmap<float, 4> generated(width, height, Y_UPWARD);
             const Projection projection(
                 Vector2(scale, scale),
                 Vector2(border-bounds.l, border-bounds.b)
             );
             const Range range(request->pixel_range/request->glyph_scale);
             const MSDFGeneratorConfig config(request->overlap_support != 0, smgMakeErrorCorrectionConfig(*request));
-            BitmapRef<float, 4> bitmap(pixels, width, height, Y_UPWARD);
-            generateMTSDF(bitmap, shape, projection, range, config);
+            generateMTSDF(generated, shape, projection, range, config);
+
+            const size_t pixelCount = static_cast<size_t>(width)*static_cast<size_t>(height)*4u;
+            pixels = static_cast<float *>(std::malloc(pixelCount*sizeof(float)));
+            if (!pixels) {
+                status = smgFail(SMG_STATUS_ALLOCATION_FAILED, "Failed to allocate output pixel buffer.");
+                break;
+            }
+            std::memcpy(pixels, static_cast<const float *>(generated), pixelCount*sizeof(float));
 
             result->pixels = pixels;
             result->channels = 4;
