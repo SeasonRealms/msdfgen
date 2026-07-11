@@ -301,9 +301,7 @@ if(MSDFGEN_INSTALL)
     if (NOT MSDFGEN_INSTALL_NO_GLOBAL_INCLUDE)
         install(FILES "${CMAKE_CURRENT_BINARY_DIR}/msdfgen.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
     endif()
-    if(MSVC AND BUILD_SHARED_LIBS)
-        install(FILES $<TARGET_PDB_FILE:msdfgen-core> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
-    endif()
+    # msdfgen-core is STATIC – no PDB to install
 
     if(NOT MSDFGEN_CORE_ONLY)
         install(TARGETS msdfgen-ext EXPORT msdfgenTargets
