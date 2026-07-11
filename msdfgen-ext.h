@@ -25,3 +25,4 @@
 #include "ext/save-png.h"
 #include "ext/import-svg.h"
 #include "ext/import-font.h"
+#include "ext/msdfgen-c-api.h"
